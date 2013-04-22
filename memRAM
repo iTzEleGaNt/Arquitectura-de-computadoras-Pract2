@@ -1,0 +1,49 @@
+`timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// Company: 
+// Engineer: 
+// 
+// Create Date:     
+// Design Name: 
+// Module Name:    memRAM 
+// Project Name: 
+// Target Devices: 
+// Tool versions: 
+// Description: 
+//
+// Dependencies: 
+//
+// Revision: 
+// Revision 0.01 - File Created
+// Additional Comments: 
+// //Behavioral modelof Random Access Memory:
+// 32-bit wide, 256 words deep,
+// asynchronous read-port if RD=1,
+// synchronous write-port if WR=1,
+// initialize from hex file ("data.dat")
+// on positive edge of reset signal, 
+// dump to binary file ("dump.dat")   
+// on positive edge of dump signal.
+//////////////////////////////////////////////////////////////////////////////////
+module memRAM(CLK,RST,DMP,WR,RD,address,writeD,readD);
+    input CLK, RST, DMP, WR, RD;
+    input [31:0] address, writeD;
+    output [31:0] readD;
+    reg [31:0] readD;
+    parameter  memSize=256;
+    reg [31:0] memArray [0:memSize-1];
+    integer    chann,i; // Temp variables: for loops 
+	always @ (posedge RST)
+     $readmemh("data.dat", memArray);
+   always @ (posedge CLK)
+     if (WR) memArray[address[9:2]] =writeD;	// write if WR & positive clock edge (synchronous)//9:2 porque bite 1 y 0 siempre son 0
+   always @ (address or RD) // read if RD, independent of clock (asynchronous)
+
+     if (RD) 
+       begin
+         readD = memArray[address[9:2]];
+         $display("Getting address %h containing %h", address[9:2], readD);
+       end
+
+
+endmodule
