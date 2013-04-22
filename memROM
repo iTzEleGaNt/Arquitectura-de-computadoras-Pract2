@@ -1,0 +1,40 @@
+`timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// Company: 
+// Engineer: 
+// 
+// Create Date:    
+// Design Name: 
+// Module Name:    MemRom 
+// Project Name: 
+// Target Devices: 
+// Tool versions: 
+// Description: 
+//
+// Dependencies: 
+//
+// Revision: 
+// Revision 0.01 - File Created
+// Additional Comments: 
+//// 32-bit wide, 256 words deep,
+// asynchronous read-port,
+// initialize from file on positive
+// edge of reset signal, by reading
+// contents of "text.dat" interpeted
+// as hex.
+//
+//////////////////////////////////////////////////////////////////////////////////
+module MemRom(
+   readData,address,rst);
+   input rst;
+   input [31:0] address;
+   output [31:0] readData;
+   reg [31:0] readData;
+   //
+   reg [31:0] programMemoryArray [0:1023];
+   always @ (posedge rst)
+     $readmemh("text.dat", programMemoryArray);
+   always @ (address)
+     readData = programMemoryArray[address[11:2]];
+
+endmodule
