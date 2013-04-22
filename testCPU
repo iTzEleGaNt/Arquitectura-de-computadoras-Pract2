@@ -1,0 +1,38 @@
+`timescale 1ns / 1ps
+//test of CPU
+module testCPU;
+   reg CLK,RST,dump,done;
+   wire Halt;
+   
+   CPU CPUblock(.CLK(CLK), .RST(RST), .Halt(Halt), .dump(dump));
+
+  initial
+		begin
+			CLK=1'b0;
+			forever
+				#1 CLK = ~CLK;
+		end
+	 
+	initial
+		begin
+			$display("Beginning simulation");
+			#0 RST=1'b1; dump=1'b0; done=1'b0;
+			#4 RST=1'b0;
+		end
+		
+	always @ (Halt)
+		if (Halt)
+			begin
+				$display("Executed Halt Instruction");
+				dump=1'b1;
+				done=1'b1;
+			end
+			
+	always @ (posedge CLK)
+		if (done)
+			begin
+				$display("Data memory dumped.  Exiting ...");
+				$finish;
+			end
+
+endmodule // testCPU
