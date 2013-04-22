@@ -1,0 +1,85 @@
+`timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// Company: 
+// Engineer: 
+// 
+// Create Date:   
+// Design Name: 
+// Module Name:    ControlUnit 
+// Project Name: 
+// Target Devices: 
+// Tool versions: 
+// Description: 
+//
+// Dependencies: 
+//
+// Revision: 
+// Revision 0.01 - File Created
+// Additional Comments: 
+//
+//////////////////////////////////////////////////////////////////////////////////
+module ControlUnit(OpCode, funct,ALUzero, WE, CTR, SE, ImmSel, Halt,RegDestino,MemoriaReg,MemWr,MemRd,nPC_sel,jump,Fjal,jumpReg);
+    input [5:0] OpCode, funct;
+   input ALUzero;
+    output WE, SE, ImmSel, Halt,RegDestino,MemoriaReg,MemWr,MemRd,nPC_sel,jump,Fjal,jumpReg,Halt;
+    output [2:0] CTR;
+ 	wire Add, Addi, Nor, Rformat,Or,PCBeq, PCBne, addi, ori, andi, lw, sw, beq, bne,j,jal, jr;
+
+	assign Rformat = (~OpCode[5])&(~OpCode[4])&(~OpCode[3])&(~OpCode[2])&(~OpCode[1])&(~OpCode[0]);
+	
+    //R-Format instructions
+	assign Add = (Rformat)&(funct[5])&(~funct[4])&(~funct[3])&(~funct[2])&(~funct[1])&(~funct[0]);//10 0000
+	assign sub = (Rformat)&(funct[5])&(~funct[4])&(~funct[3])&(~funct[2])&(funct[1])&(~funct[0]);//10 0010
+	assign And = (Rformat)&(funct[5])&(~funct[4])&(~funct[3])&(funct[2])&(~funct[1])&(~funct[0]);//10 0100
+	assign Or = (Rformat)&(funct[5])&(~funct[4])&(~funct[3])&(funct[2])&(~funct[1])&(funct[0]);//10 0101
+	assign Nor = (Rformat)&(funct[5])&(~funct[4])&(~funct[3])&(funct[2])&(funct[1])&(funct[0]);//10 0111
+	assign jr = (Rformat)&(~funct[5])&(~funct[4])&(funct[3])&(~funct[2])&(~funct[1])&(~funct[0]);//001000
+    //I-Format instructions
+	assign Addi = (~OpCode[5])&(~OpCode[4])&(OpCode[3])&(~OpCode[2])&(~OpCode[1])&(~OpCode[0]);//00 1000
+	assign ori = (~OpCode[5])&(~OpCode[4])&(OpCode[3])&(OpCode[2])&(~OpCode[1])&(OpCode[0]); //00 1101
+	assign Andi = (~OpCode[5])&(~OpCode[4])&(OpCode[3])&(OpCode[2])&(~OpCode[1])&(~OpCode[0]); //00 1100
+	assign lw = (OpCode[5])&(~OpCode[4])&(~OpCode[3])&(~OpCode[2])&(OpCode[1])&(OpCode[0]); //10 0011
+	assign sw = (OpCode[5])&(~OpCode[4])&(OpCode[3])&(~OpCode[2])&(OpCode[1])&(OpCode[0]); //10 1011
+	assign beq = (~OpCode[5])&(~OpCode[4])&(~OpCode[3])&(OpCode[2])&(~OpCode[1])&(~OpCode[0]); //00 0100
+	assign bne = (~OpCode[5])&(~OpCode[4])&(~OpCode[3])&(OpCode[2])&(~OpCode[1])&(OpCode[0]); //00 0101
+    //Special, non-MIPS instruction
+	assign Halt = (OpCode[5])&(OpCode[4])&(OpCode[3])&(OpCode[2])&(OpCode[1])&(OpCode[0]);//11 1111
+	//formato J opcode[6 bits]
+  assign j = (~OpCode[5])&(~OpCode[3])&(~OpCode[3])&(~OpCode[2])&(OpCode[1])&(~OpCode[0]); //00 0010
+	assign jal = (~OpCode[5])&(~OpCode[4])&(~OpCode[3])&(~OpCode[2])&(OpCode[1])&(OpCode[0]); //00 0011
+    //Control Signals
+	assign CTR[0] = Nor| And| Add | Addi| Andi | lw | sw;
+	assign CTR[1] =  lw | sw;
+	assign CTR[2] = sub | beq | bne;
+	assign WE = Add |	Addi | sub | Or |	ori |	And |	Andi | Nor | lw| jal;
+	assign ImmSel = Addi|ori|Andi| sw |	lw;
+	assign SE = Addi| lw | sw;
+//asignamos las señales de control que cada una de las instrucciones utiliza:
+
+//formato R utiliza RegDst=1 porque el registro destino	Rd debe ser en los bits[15:11]
+//formato I utiliza RegDst=0 porque el registro destino	Rt debe ser en los bits[20:16]
+	assign RegDestino = Add | sub | And | Or | Nor;	
+
+//sw necesita escribir en memoria, lw necesita leer de memoria
+	assign MemWr = sw;
+	assign MemRd = lw;	
+//LW utiliza Memoria a Registro=1 porque debe seleccionar la direccion en la memoria de datos, para leer el dato
+	assign MemoriaReg = lw;
+	
+//Para bne y beq  
+ //si no el multiplexor tomara el dato de PC+4
+  assign PCBeq = beq;
+  assign PCBne = bne; 
+ //En el multiplexor se elegira tomar un brinco. bne= brinca si el resultado no es igual [ALUzero=0].beq= brinca si el resultado es igual [ALUzero=1]
+  assign nPC_sel = (PCBeq & ALUzero & ~PCBne) | (PCBne & ~ALUzero & ~PCBeq);
+  
+//para instrucciones formato J
+  assign jump= j | jal;
+  assign Fjal= jal;
+ //formato R
+  assign jumpReg= jr;
+endmodule //ControlUnit
+
+
+
+
