@@ -1,0 +1,40 @@
+`timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// Company: 
+// Engineer: 
+// 
+// Create Date:    
+// Design Name: 
+// Module Name:    SingExt 
+// Project Name: 
+// Target Devices: 
+// Tool versions: 
+// Description: 
+//
+// Dependencies: 
+//
+// Revision: 
+// Revision 0.01 - File Created
+// Additional Comments: 
+//// Sign extender from 16- to 32-bits.
+//////////////////////////////////////////////////////////////////////////////////
+module SingExt(in,out,ExtOp);
+   input [15:0]  in;
+   input ExtOp;
+   output [31:0] out;
+   reg [31:0]    out;
+
+   always @ (in)
+		if(ExtOp)
+		 out = { in[15], in[15], in[15], in[15],
+			 in[15], in[15], in[15], in[15],
+			 in[15], in[15], in[15], in[15],
+			 in[15], in[15], in[15], in[15],
+			 in[15:0] };
+		else
+		 out = { 1'b0, 1'b0, 1'b0, 1'b0,
+			 1'b0, 1'b0, 1'b0, 1'b0,
+			 1'b0, 1'b0, 1'b0, 1'b0,
+			 1'b0, 1'b0, 1'b0, 1'b0,
+			 in[15:0] };
+endmodule // signExtend
