@@ -1,0 +1,32 @@
+`timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// Company: 
+// Engineer: 
+// 
+// Create Date:   
+// Design Name: 
+// Module Name:    reg32b 
+// Project Name: 
+// Target Devices: 
+// Tool versions: 
+// Description: 
+//
+// Dependencies: 
+//
+// Revision: 
+// Revision 0.01 - File Created
+// Additional Comments: 
+// // Behavioral model of 32-bit Register:
+// positive edge-triggered,
+// synchronous active-high reset.
+//////////////////////////////////////////////////////////////////////////////////
+module reg32b(CLK,Q,D,wEnb);
+   input  CLK, wEnb;
+   input  [31:0] D;
+   output [31:0] Q;
+   reg    [31:0] Q;
+   
+   always @ (posedge CLK)
+     if (wEnb)
+       Q = D;
+endmodule // reg32
