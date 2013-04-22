@@ -1,0 +1,50 @@
+`timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// Company: 
+// Engineer: 
+// 
+// Create Date:    
+// Design Name: 
+// Module Name:    regFile 
+// Project Name: 
+// Target Devices: 
+// Tool versions: 
+// Description: 
+//
+// Dependencies: 
+//
+// Revision: 
+// Revision 0.01 - File Created
+// Additional Comments: 
+//// Behavioral model of register file:
+// 32-bit wide, 32 words deep,
+// two asynchronous read-ports,
+// one synchronous write-port.
+// Dump register file contents to
+// console on pos edge of dump signal.
+//////////////////////////////////////////////////////////////////////////////////
+module regFile(CLK, wEnb, DMP, writeReg, writeD, readReg1, readD1, readReg2, readD2);
+   input CLK, wEnb, DMP;
+   input [4:0] writeReg, readReg1,readReg2;
+   input [31:0] writeD;
+   output [31:0] readD1, readD2;
+   reg [31:0] readD1, readD2;
+   reg [31:0] array [0:31];
+   reg dirty1, dirty2;
+   integer    i;
+   always @ (posedge CLK)
+     if (wEnb)
+       if (writeReg!=5'h0) // why? 
+   		begin
+	    	  array[writeReg] = writeD;
+	    	  dirty1=1'b1;
+	    	  dirty2=1'b1;
+	 		end
+	always @ (readReg1 or dirty1)
+     begin
+			readD1 = array[readReg1];
+			dirty1=0;
+     end
+
+
+endmodule
