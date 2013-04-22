@@ -1,0 +1,97 @@
+`timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// Company: 
+// Engineer: 
+// 
+// Create Date:   
+// Design Name: 
+// Module Name:    CPU 
+// Project Name: 
+// Target Devices: 
+// Tool versions: 
+// Description: 
+//
+// Dependencies: 
+//
+// Revision: 
+// Revision 0.01 - File Created
+// Additional Comments: 
+//
+//////////////////////////////////////////////////////////////////////////////////
+module CPU(CLK, RST, Halt, dump);
+  input CLK, RST, dump;
+	output Halt;
+	
+    wire WE, SE, ImmSel, z,nPC, Jump, Jjal, JR,RegDst, memWR,memRW; 
+    wire [31:0] pc, pc_4, Inst, ImmExt, ALUa, ALUb, ALUc, RegB,PCauxInm,PCaux,PCJmp,PCoutInm, PCin,PCin2,BusW,BusWaux,lectura;
+    wire [4:0] MuxW, rd, rs, rt,point_RA,Rw;
+    wire [5:0] OpCode, funct;
+    wire [15:0] Imm;
+    wire [25:0] Address;
+    wire [2:0] CTR;
+    
+    //Instruction decoding
+    assign OpCode = Inst[31:26];
+    assign funct = Inst[5:0];
+    assign rd = Inst[15:11];
+    assign rs = Inst[25:21];
+    assign rt = Inst[20:16];
+    assign Imm = Inst[15:0];
+    assign Address = Inst[25:0];
+	 assign point_RA=5'b11111; //apuntador a return address reg 31
+	 
+	 //brincos
+	 assign PCJmp = {pc[31:28],Address,1'b0, 1'b0};//program counter + D.Inmediato + 2
+	
+	//[PC + 4] + Imma16  asignarle a PC una direccion de brinco (branch)
+	 add32 ADDPCImma(.A(pc_4), .B(PCoutInm*4), .S(PCauxInm));
+	 
+    
+    //PC
+    register ProgramCounter(.q(pc),.d(PCin2),.clk(CLK),.rst(RST));
+    
+    //Next instruction address
+    add32 PC_plus_4(.S(pc_4),.A(pc),.B(4));
+    
+    //Program Memory
+    MemRom ProgramMemory(.readData(Inst),.address(pc),.rst(RST));
+    
+    //Register File
+    regFile RegFile(.CLK(CLK),.DMP(dump),.readD1(ALUa),.readReg1(rs),.readD2(RegB),.readReg2(rt),.writeD(Rw),.wEnb(WE),.writeReg(BusW));		
+    
+    //ALU
+    ALU ArithmeticLogicUnit(.control(CTR),.A(ALUa),.B(ALUb),.result(ALUc),.zero(z));
+    
+    //Muxes
+    mux5 MUX_WR(.out(MuxW),.in0(rt),.in1(rd),.select(RegDst));// decide entre rd (tipo R) y rt(tipo I)
+	 
+		 
+		 //Multiplexor 5-bits para elegir RA cuando la instruccion es JAL
+			//Si Jjal=1 entonces  Rw <- R[31], Si Jjal=0 entonces  Rw <- salida del MUX5Registros
+		 mux5 MUX5_RA(.select(Jjal),.in0(MuxW),.in1(point_RA),.out(Rw));// selecciona enre registro destino y Return address
+		//Multiplexor para jr
+		//JR: 1= jr 0=formatoR, bne, beq, j, jal
+		mux32 MUXJR(.select(JR),.in0(PCin),.in1(ALUa),.out(PCin2));
+		//Multiplexor para jal
+	   //busWaux: resultado de la operacion de cualquier formato
+	   //busW: lleva el dato que se escribira en el registro 31
+	   mux32 MUXJal(.select(Jjal),.in0(BusWaux),.in1(pc_4),.out(BusW)); 
+		 //Multiplexor para elejir entre instruccion branch o formatoR
+		 //nPC: 1= bne, beq 0=formatoR
+		 mux32 MUXPCImma(.select(nPC),.in0(pc_4),.in1(PCauxInm),.out(PCaux));
+		 //Multiplexor para elejir entre instruccion formato J o PCauxiliar
+			//Jump: 1= j,jal 0=formatoR, bne, beq
+		 mux32 MUXPCJump(.select(Jump),.in0(PCaux),.in1(PCJmp),.out(PCin));
+	
+	 mux32 MUX_IMM(.out(ALUb),.in0(RegB),.in1(ImmExt),.select(ImmSel));
+    mux32 MUXAluMem(.select(MemtoReg),.in0(ALUc),.in1(lectura),.out(BusWaux));
+    //Sign Extender
+    SingExt SignExt(.ExtOp(SE),.in(Imm),.out(ImmExt));
+	 SingExt PCExt(.ExtOp(SE),.in(Imm),.out(PCoutInm));
+    
+    //Control Unit
+   ControlUnit CtrUnit(.OpCode(OpCode), .funct(funct), .WE(WE), .CTR(CTR),.ALUzero(z),.RegDestino(RegDst),.MemoriaReg(MemtoReg), .ImmSel(ImmSel), .SE(SE),.MemWr(MemWr), .MemRd(MemRd),.nPC_sel(nPC),.jump(Jump),.Fjal(Jjal),.jumpReg(JR),.Halt(Halt));
+	 //memoria RaM lw y sw
+	 memRAM DataMem(.CLK(CLK),.RST(RST),.DMP(dump),.address(ALUc),.WR(MemWr),.writeD(RegB),.RD(MemRd),.readD(lectura));
+	
+endmodule // CPU
